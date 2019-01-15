@@ -82,6 +82,8 @@ Single Selection:
                .hideGalleryTile() //Default: show. Set this if you don't want to further let user select from a gallery app. In such case, I suggest you to set maximum displaying images to Integer.MAX_VALUE.
                .setTag("A request ID") //Default: null. Set this if you need to identify which picker is calling back your fragment / activity.
                .dismissOnSelect(true) //Default: true. Set this if you do not want the picker to dismiss right after selection. But then you will have to dismiss by yourself.
+               .setCameraTitle("Take a photo") //Default: null. Set this to show text below camera icon
+               .setGalleryTitle("Choose from gallery") //Default: null. Set this to show text below gallery icon
                .build();
 ```
 
