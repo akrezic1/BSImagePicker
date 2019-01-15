@@ -1,15 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.asksira.bsimagepicker.widget.FitWidthRelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    android:background="@android:color/black"
-    app:view_aspectRatio="1">
+                                                         android:layout_width="match_parent"
+                                                         android:layout_height="wrap_content"
+                                                         xmlns:app="http://schemas.android.com/apk/res-auto"
+                                                         xmlns:tools="http://schemas.android.com/tools"
+                                                         android:background="@android:color/black"
+                                                         app:view_aspectRatio="1">
 
     <ImageView
+        android:id="@+id/image_camera"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:src="@drawable/picker_icon_camera"
         android:layout_centerInParent="true"/>
+
+    <TextView
+        android:id="@+id/tv_title"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_centerHorizontal="true"
+        android:textColor="@android:color/white"
+        android:layout_below="@+id/image_camera"
+        android:layout_marginTop="8dp"
+        tools:text="Take a photo"/>
 
 </com.asksira.bsimagepicker.widget.FitWidthRelativeLayout>

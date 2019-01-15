@@ -30,6 +30,8 @@ public class MainActivity extends AppCompatActivity implements BSImagePicker.OnS
             @Override
             public void onClick(View v) {
                 BSImagePicker pickerDialog = new BSImagePicker.Builder("com.asksira.imagepickersheetdemo.fileprovider")
+                        .setCameraTitle("Take a photo")
+                        .setGalleryTitle("Choose from gallery")
                         .build();
                 pickerDialog.show(getSupportFragmentManager(), "picker");
             }

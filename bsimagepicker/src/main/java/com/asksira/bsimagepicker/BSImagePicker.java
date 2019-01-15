@@ -108,6 +108,8 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     private int multiSelectDoneTextColor = R.color.multiselect_done;
     private boolean showOverSelectMessage = true;
     private int overSelectTextColor = R.color.error_text;
+    private String cameraTitle;
+    private String galleryTitle;
 
     /**
      * Here we check if the caller Activity has registered callback and reference it.
@@ -367,6 +369,8 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             multiSelectDoneTextColor = getArguments().getInt("multiSelectDoneTextColor");
             showOverSelectMessage = getArguments().getBoolean("showOverSelectMessage");
             overSelectTextColor = getArguments().getInt("overSelectTextColor");
+            cameraTitle = getArguments().getString("cameraTitle");
+            galleryTitle = getArguments().getString("galleryTitle");
         } catch (Exception e) {
             if (BuildConfig.DEBUG) e.printStackTrace();
         }
@@ -434,6 +438,10 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
                 });
             }
         }
+
+        adapter.setCameraTitle(cameraTitle);
+        adapter.setGalleryTitle(galleryTitle);
+
         recyclerView.setAdapter(adapter);
     }
 
@@ -568,6 +576,8 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         private int multiSelectDoneTextColor = R.color.multiselect_done;
         private boolean showOverSelectMessage = true;
         private int overSelectTextColor = R.color.error_text;
+        private String cameraTitle;
+        private String galleryTitle;
 
         public Builder(String providerAuthority) {
             this.providerAuthority = providerAuthority;
@@ -668,6 +678,16 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             return this;
         }
 
+        public Builder setCameraTitle(String title) {
+            this.cameraTitle = title;
+            return this;
+        }
+
+        public Builder setGalleryTitle(String title) {
+            this.galleryTitle = title;
+            return this;
+        }
+
         public BSImagePicker build() {
             Bundle args = new Bundle();
             args.putString("providerAuthority", providerAuthority);
@@ -687,6 +707,8 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             args.putInt("multiSelectDoneTextColor", multiSelectDoneTextColor);
             args.putBoolean("showOverSelectMessage", showOverSelectMessage);
             args.putInt("overSelectTextColor", overSelectTextColor);
+            args.putString("cameraTitle", cameraTitle);
+            args.putString("galleryTitle", galleryTitle);
 
             BSImagePicker fragment = new BSImagePicker();
             fragment.setArguments(args);

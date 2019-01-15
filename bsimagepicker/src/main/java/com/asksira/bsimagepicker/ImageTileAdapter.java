@@ -7,6 +7,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
@@ -34,6 +35,8 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
     protected int nonListItemCount;
     private boolean showCameraTile;
     private boolean showGalleryTile;
+    private String cameraTitle;
+    private String galleryTitle;
 
     private View.OnClickListener cameraTileOnClickListener;
     private View.OnClickListener galleryTileOnClickListener;
@@ -67,6 +70,14 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
                 nonListItemCount = 0;
             }
         }
+    }
+
+    public void setCameraTitle(String cameraTitle) {
+        this.cameraTitle = cameraTitle;
+    }
+
+    public void setGalleryTitle(String galleryTitle) {
+        this.galleryTitle = galleryTitle;
     }
 
     @Override
@@ -180,27 +191,33 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
 
     public class CameraTileViewHolder extends BaseViewHolder {
 
+        TextView tvTitle;
+
         public CameraTileViewHolder(View itemView) {
             super(itemView);
             itemView.setOnClickListener(cameraTileOnClickListener);
+            tvTitle = itemView.findViewById(R.id.tv_title);
         }
 
         @Override
         public void bind(int position) {
-
+            tvTitle.setText(cameraTitle);
         }
     }
 
     public class GalleryTileViewHolder extends BaseViewHolder {
 
+        TextView tvTitle;
+
         public GalleryTileViewHolder(View itemView) {
             super(itemView);
             itemView.setOnClickListener(galleryTileOnClickListener);
+            tvTitle = itemView.findViewById(R.id.tv_title);
         }
 
         @Override
         public void bind(int position) {
-
+            tvTitle.setText(galleryTitle);
         }
     }
 
@@ -248,6 +265,7 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
             Picasso.get()
                    .load(imageFile)
                    .fit()
+                   .centerCrop()
                    .into(ivImage);
             darken.setVisibility(selectedFiles.contains(imageFile)? View.VISIBLE : View.INVISIBLE);
             ivTick.setVisibility(selectedFiles.contains(imageFile)? View.VISIBLE : View.INVISIBLE);
