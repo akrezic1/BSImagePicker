@@ -37,7 +37,6 @@ import android.widget.FrameLayout;
 import android.widget.TextView;
 
 import java.io.File;
-import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -99,6 +98,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     private int minimumMultiSelectCount = 1;
     private int maximumMultiSelectCount = Integer.MAX_VALUE;
     private String providerAuthority;
+    private String folderName = "";
     private boolean showCameraTile = true;
     private boolean showGalleryTile = true;
     private int spanCount = 3;
@@ -348,6 +348,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     private void loadConfigFromBuilder() {
         try {
             providerAuthority = getArguments().getString("providerAuthority");
+            folderName = getArguments().getString("folderName");
             tag = getArguments().getString("tag");
             isMultiSelection = getArguments().getBoolean("isMultiSelect");
             dismissOnSelect = getArguments().getBoolean("dismissOnSelect");
@@ -475,12 +476,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         if (getContext() == null) return;
         Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePhotoIntent.resolveActivity(getContext().getPackageManager()) != null) {
-            File photoFile = null;
-            try {
-                photoFile = createImageFile();
-            } catch (IOException e) {
-                if (BuildConfig.DEBUG) e.printStackTrace();
-            }
+            File photoFile = createImageFile();
             if (photoFile != null) {
                 Uri photoURI = FileProvider.getUriForFile(getContext(),
                         providerAuthority,
@@ -496,15 +492,11 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         }
     }
 
-    private File createImageFile() throws IOException {
+    private File createImageFile() {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-        String imageFileName = "JPEG_" + timeStamp + "_";
-        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM);
-        File image = File.createTempFile(
-                imageFileName,  /* prefix */
-                ".jpg",   /* suffix */
-                storageDir      /* directory */
-        );
+        String imageFileName = folderName + "/JPEG_" + timeStamp + "_";
+        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        File image = new File(storageDir, imageFileName + ".jpg");
 
         // Save a file: path for use with ACTION_VIEW intents
         currentPhotoUri = Uri.fromFile(image);
@@ -560,6 +552,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     public static class Builder {
 
         private String providerAuthority;
+        private String folderName;
         private String tag;
         private boolean isMultiSelect;
         private boolean dismissOnSelect = true;
@@ -580,7 +573,12 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         private String galleryTitle;
 
         public Builder(String providerAuthority) {
+            this(providerAuthority, null);
+        }
+
+        public Builder(String providerAuthority, String folderName) {
             this.providerAuthority = providerAuthority;
+            this.folderName = folderName;
         }
 
         public Builder isMultiSelect () {
@@ -709,6 +707,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             args.putInt("overSelectTextColor", overSelectTextColor);
             args.putString("cameraTitle", cameraTitle);
             args.putString("galleryTitle", galleryTitle);
+            args.putString("folderName", folderName);
 
             BSImagePicker fragment = new BSImagePicker();
             fragment.setArguments(args);
