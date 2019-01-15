@@ -8,7 +8,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 
-import com.bumptech.glide.Glide;
+import com.squareup.picasso.Picasso;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -245,7 +245,10 @@ public class ImageTileAdapter extends RecyclerView.Adapter<ImageTileAdapter.Base
             if (imageList == null) return;
             File imageFile = imageList.get(position - nonListItemCount);
             itemView.setTag(Uri.fromFile(imageFile));
-            Glide.with(itemView).load(imageFile).into(ivImage);
+            Picasso.get()
+                   .load(imageFile)
+                   .fit()
+                   .into(ivImage);
             darken.setVisibility(selectedFiles.contains(imageFile)? View.VISIBLE : View.INVISIBLE);
             ivTick.setVisibility(selectedFiles.contains(imageFile)? View.VISIBLE : View.INVISIBLE);
         }
