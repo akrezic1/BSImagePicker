@@ -81,12 +81,17 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
 
     //Callbacks
     public interface OnSingleImageSelectedListener {
+
         void onSingleImageSelected(Uri uri, String tag);
     }
+
     private OnSingleImageSelectedListener onSingleImageSelectedListener;
+
     public interface OnMultiImageSelectedListener {
-        void onMultiImageSelected (List<Uri> uriList, String tag);
+
+        void onMultiImageSelected(List<Uri> uriList, String tag);
     }
+
     private OnMultiImageSelectedListener onMultiImageSelectedListener;
 
     //States
@@ -112,6 +117,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     private int overSelectTextColor = R.color.error_text;
     private String cameraTitle;
     private String galleryTitle;
+    private boolean openCameraOnly;
 
     /**
      * Here we check if the caller Activity has registered callback and reference it.
@@ -131,7 +137,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         loadConfigFromBuilder();
-        if (Utils.isReadStorageGranted(getContext())) {
+        if (Utils.isReadStorageGranted(getContext()) && !openCameraOnly) {
             getLoaderManager().initLoader(LOADER_ID, null, BSImagePicker.this);
         } else {
             Utils.checkPermission(BSImagePicker.this, Manifest.permission.READ_EXTERNAL_STORAGE, PERMISSION_READ_STORAGE);
@@ -143,10 +149,13 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
 
     @Nullable
     @Override
-    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
+    public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container,
+                             @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.layout_imagepicker_sheet, container, false);
         bindViews(view);
-        setupRecyclerView();
+        if (!openCameraOnly) {
+            setupRecyclerView();
+        }
         /*
          Here we check if the parent fragment has registered callback and reference it.
          */
@@ -161,7 +170,8 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
          */
         if ((isMultiSelection && onMultiImageSelectedListener == null) ||
                 (!isMultiSelection) && onSingleImageSelectedListener == null) {
-            throw new IllegalArgumentException("Your caller activity or parent fragment must implements the correct ImageSelectedListener");
+            throw new IllegalArgumentException(
+                    "Your caller activity or parent fragment must implements the correct ImageSelectedListener");
         }
         return view;
     }
@@ -173,6 +183,14 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     @NonNull
     public Dialog onCreateDialog(Bundle savedInstanceState) {
         BottomSheetDialog dialog = (BottomSheetDialog) super.onCreateDialog(savedInstanceState);
+
+        if (openCameraOnly) {
+            launchCameraWithPermissionCheck();
+            setShowsDialog(false);
+
+            return dialog;
+        }
+
         dialog.setOnShowListener(new DialogInterface.OnShowListener() {
             @Override
             public void onShow(DialogInterface dialog) {
@@ -234,7 +252,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         }
         switch (requestCode) {
             case PERMISSION_READ_STORAGE:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED && !openCameraOnly) {
                     getLoaderManager().initLoader(LOADER_ID, null, this);
                 } else {
                     dismiss();
@@ -265,19 +283,25 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     public void onActivityResult(int requestCode, int resultCode, Intent data) {
         switch (requestCode) {
             case REQUEST_TAKE_PHOTO:
+                if (openCameraOnly) {
+                    dismissAllowingStateLoss();
+                }
                 if (resultCode == RESULT_OK) {
                     notifyGallery();
                     if (onSingleImageSelectedListener != null) {
                         onSingleImageSelectedListener.onSingleImageSelected(currentPhotoUri, tag);
-                        if (dismissOnSelect) dismiss();
+                        if (dismissOnSelect) {
+                            dismiss();
+                        }
                     }
                 } else {
                     try {
                         File file = new File(URI.create(currentPhotoUri.toString()));
                         file.delete();
                     } catch (Exception e) {
-                        if (BuildConfig.DEBUG)
+                        if (BuildConfig.DEBUG) {
                             Log.d("ImagePicker", "Failed to delete temp file: " + currentPhotoUri.toString());
+                        }
                     }
                 }
                 break;
@@ -285,7 +309,9 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
                 if (resultCode == RESULT_OK) {
                     if (onSingleImageSelectedListener != null) {
                         onSingleImageSelectedListener.onSingleImageSelected(data.getData(), tag);
-                        if (dismissOnSelect) dismiss();
+                        if (dismissOnSelect) {
+                            dismiss();
+                        }
                     }
                 }
                 break;
@@ -297,7 +323,9 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     @Override
     public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putParcelableArrayList("selectedImages", (ArrayList<Uri>) adapter.getSelectedUris());
+        if (adapter != null) {
+            outState.putParcelableArrayList("selectedImages", (ArrayList<Uri>) adapter.getSelectedUris());
+        }
         outState.putParcelable("currentPhotoUri", currentPhotoUri);
     }
 
@@ -373,8 +401,11 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             overSelectTextColor = getArguments().getInt("overSelectTextColor");
             cameraTitle = getArguments().getString("cameraTitle");
             galleryTitle = getArguments().getString("galleryTitle");
+            openCameraOnly = getArguments().getBoolean("openCameraOnly");
         } catch (Exception e) {
-            if (BuildConfig.DEBUG) e.printStackTrace();
+            if (BuildConfig.DEBUG) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -388,7 +419,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         recyclerView.setLayoutManager(gll);
         /* We are disabling item change animation because the default animation is fade out fade in, which will
          * appear a little bit strange due to the fact that we are darkening the cell at the same time. */
-        ((SimpleItemAnimator)recyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
+        ((SimpleItemAnimator) recyclerView.getItemAnimator()).setSupportsChangeAnimations(false);
         recyclerView.addItemDecoration(new GridItemSpacingDecoration(spanCount, gridSpacing, false));
         if (adapter == null) {
             adapter = new ImageTileAdapter(getContext(), isMultiSelection, showCameraTile, showGalleryTile);
@@ -396,15 +427,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             adapter.setCameraTileOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if (Utils.isCameraGranted(getContext()) && Utils.isWriteStorageGranted(getContext())) {
-                        launchCamera();
-                    } else {
-                        if (Utils.isCameraGranted(getContext())) {
-                            Utils.checkPermission(BSImagePicker.this, Manifest.permission.WRITE_EXTERNAL_STORAGE, PERMISSION_WRITE_STORAGE);
-                        } else {
-                            Utils.checkPermission(BSImagePicker.this, Manifest.permission.CAMERA, PERMISSION_CAMERA);
-                        }
-                    }
+                    launchCameraWithPermissionCheck();
                 }
             });
             adapter.setGalleryTileOnClickListener(new View.OnClickListener() {
@@ -421,7 +444,9 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
                 public void onClick(View v) {
                     if (v.getTag() != null && v.getTag() instanceof Uri && onSingleImageSelectedListener != null) {
                         onSingleImageSelectedListener.onSingleImageSelected((Uri) v.getTag(), tag);
-                        if (dismissOnSelect) dismiss();
+                        if (dismissOnSelect) {
+                            dismiss();
+                        }
                     }
                 }
             });
@@ -435,7 +460,9 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
                 adapter.setOnOverSelectListener(new ImageTileAdapter.OnOverSelectListener() {
                     @Override
                     public void onOverSelect() {
-                        if (showOverSelectMessage) showOverSelectMessage();
+                        if (showOverSelectMessage) {
+                            showOverSelectMessage();
+                        }
                     }
                 });
             }
@@ -447,17 +474,32 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         recyclerView.setAdapter(adapter);
     }
 
+    private void launchCameraWithPermissionCheck() {
+        if (Utils.isCameraGranted(getContext()) && Utils.isWriteStorageGranted(getContext())) {
+            launchCamera();
+        } else {
+            if (Utils.isCameraGranted(getContext())) {
+                Utils.checkPermission(BSImagePicker.this, Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                      PERMISSION_WRITE_STORAGE);
+            } else {
+                Utils.checkPermission(BSImagePicker.this, Manifest.permission.CAMERA, PERMISSION_CAMERA);
+            }
+        }
+    }
+
     private void setupBottomBar(View rootView) {
         CoordinatorLayout parentView = (CoordinatorLayout) (rootView.getParent().getParent());
         bottomBarView = LayoutInflater.from(getContext()).inflate(R.layout.item_picker_multiselection_bar, parentView, false);
         ViewCompat.setTranslationZ(bottomBarView, ViewCompat.getZ((View) rootView.getParent()));
         parentView.addView(bottomBarView, -2);
-        bottomBarView.findViewById(R.id.multiselect_bar_bg).setBackgroundColor(ContextCompat.getColor(getContext(), multiSelectBarBgColor));
+        bottomBarView.findViewById(R.id.multiselect_bar_bg)
+                     .setBackgroundColor(ContextCompat.getColor(getContext(), multiSelectBarBgColor));
         tvMultiSelectMessage = bottomBarView.findViewById(R.id.tv_multiselect_message);
         tvMultiSelectMessage.setTextColor(ContextCompat.getColor(getContext(), multiSelectTextColor));
         tvMultiSelectMessage.setText(minimumMultiSelectCount == 1 ?
-                getString(R.string.imagepicker_multiselect_not_enough_singular) :
-                getString(R.string.imagepicker_multiselect_not_enough_plural, minimumMultiSelectCount));
+                                             getString(R.string.imagepicker_multiselect_not_enough_singular) :
+                                             getString(R.string.imagepicker_multiselect_not_enough_plural,
+                                                       minimumMultiSelectCount));
         tvDone = bottomBarView.findViewById(R.id.tv_multiselect_done);
         tvDone.setTextColor(ContextCompat.getColor(getContext(), multiSelectDoneTextColor));
         tvDone.setOnClickListener(new View.OnClickListener() {
@@ -474,19 +516,24 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     }
 
     private void launchCamera() {
-        if (getContext() == null) return;
+        if (getContext() == null) {
+            return;
+        }
         Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePhotoIntent.resolveActivity(getContext().getPackageManager()) != null) {
             File photoFile = createImageFile();
             if (photoFile != null) {
                 Uri photoURI = FileProvider.getUriForFile(getContext(),
-                        providerAuthority,
-                        photoFile);
+                                                          providerAuthority,
+                                                          photoFile);
                 takePhotoIntent.putExtra(MediaStore.EXTRA_OUTPUT, photoURI);
-                List<ResolveInfo> resolvedIntentActivities = getContext().getPackageManager().queryIntentActivities(takePhotoIntent, PackageManager.MATCH_DEFAULT_ONLY);
+                List<ResolveInfo> resolvedIntentActivities = getContext().getPackageManager()
+                                                                         .queryIntentActivities(takePhotoIntent,
+                                                                                                PackageManager.MATCH_DEFAULT_ONLY);
                 for (ResolveInfo resolvedIntentInfo : resolvedIntentActivities) {
                     String packageName = resolvedIntentInfo.activityInfo.packageName;
-                    getContext().grantUriPermission(packageName, photoURI, Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
+                    getContext().grantUriPermission(packageName, photoURI,
+                                                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION | Intent.FLAG_GRANT_READ_URI_PERMISSION);
                 }
                 startActivityForResult(takePhotoIntent, REQUEST_TAKE_PHOTO);
             }
@@ -505,33 +552,38 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     }
 
     private void notifyGallery() {
-        if (getContext() == null) return;
+        if (getContext() == null) {
+            return;
+        }
         Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
         mediaScanIntent.setData(currentPhotoUri);
         getContext().sendBroadcast(mediaScanIntent);
     }
 
-    private void updateSelectCount (int newCount) {
-        if (getContext() == null) return;
+    private void updateSelectCount(int newCount) {
+        if (getContext() == null) {
+            return;
+        }
         if (tvMultiSelectMessage != null) {
             tvMultiSelectMessage.setTextColor(ContextCompat.getColor(getContext(), multiSelectTextColor));
             if (newCount < minimumMultiSelectCount) {
                 tvMultiSelectMessage.setText(minimumMultiSelectCount - newCount == 1 ?
-                        getString(R.string.imagepicker_multiselect_not_enough_singular) :
-                        getString(R.string.imagepicker_multiselect_not_enough_plural, minimumMultiSelectCount - newCount));
+                                                     getString(R.string.imagepicker_multiselect_not_enough_singular) :
+                                                     getString(R.string.imagepicker_multiselect_not_enough_plural,
+                                                               minimumMultiSelectCount - newCount));
                 tvDone.setAlpha(0.4f);
                 tvDone.setEnabled(false);
             } else {
                 tvMultiSelectMessage.setText(newCount == 1 ?
-                        getString(R.string.imagepicker_multiselect_enough_singular) :
-                        getString(R.string.imagepicker_multiselect_enough_plural, newCount));
+                                                     getString(R.string.imagepicker_multiselect_enough_singular) :
+                                                     getString(R.string.imagepicker_multiselect_enough_plural, newCount));
                 tvDone.setAlpha(1f);
                 tvDone.setEnabled(true);
             }
         }
     }
 
-    private void showOverSelectMessage () {
+    private void showOverSelectMessage() {
         if (tvMultiSelectMessage != null && getContext() != null) {
             tvMultiSelectMessage.setTextColor(ContextCompat.getColor(getContext(), overSelectTextColor));
             tvMultiSelectMessage.setText(getString(R.string.imagepicker_multiselect_overselect, maximumMultiSelectCount));
@@ -542,7 +594,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
      * Returns the TextView that appears when there is no item,
      * So that user can customize its styles, etc.
      */
-    public TextView getEmptyTextView () {
+    public TextView getEmptyTextView() {
         return tvEmptyView;
     }
 
@@ -572,6 +624,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         private int overSelectTextColor = R.color.error_text;
         private String cameraTitle;
         private String galleryTitle;
+        private boolean openCameraOnly;
 
         public Builder(String providerAuthority) {
             this(providerAuthority, null);
@@ -582,7 +635,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             this.folderName = folderName;
         }
 
-        public Builder isMultiSelect () {
+        public Builder isMultiSelect() {
             isMultiSelect = true;
             return this;
         }
@@ -592,7 +645,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             return this;
         }
 
-        public Builder setMaximumDisplayingImages (int maximumDisplayingImages) {
+        public Builder setMaximumDisplayingImages(int maximumDisplayingImages) {
             this.maximumDisplayingImages = maximumDisplayingImages;
             return this;
         }
@@ -664,7 +717,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             return this;
         }
 
-        public Builder disableOverSelectionMessage () {
+        public Builder disableOverSelectionMessage() {
             this.showOverSelectMessage = false;
             return this;
         }
@@ -684,6 +737,17 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
 
         public Builder setGalleryTitle(String title) {
             this.galleryTitle = title;
+            return this;
+        }
+
+        /**
+         * Opening camera instantly without showing bottom picker.
+         *
+         * @param openCameraOnly true to show camera only
+         * @return builder
+         */
+        public Builder setOpenCameraOnly(boolean openCameraOnly) {
+            this.openCameraOnly = openCameraOnly;
             return this;
         }
 
@@ -709,6 +773,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             args.putString("cameraTitle", cameraTitle);
             args.putString("galleryTitle", galleryTitle);
             args.putString("folderName", folderName);
+            args.putBoolean("openCameraOnly", openCameraOnly);
 
             BSImagePicker fragment = new BSImagePicker();
             fragment.setArguments(args);

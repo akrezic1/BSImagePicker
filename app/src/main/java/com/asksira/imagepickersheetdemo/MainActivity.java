@@ -2,7 +2,6 @@ package com.asksira.imagepickersheetdemo;
 
 import android.net.Uri;
 import android.os.Bundle;
-import androidx.appcompat.app.AppCompatActivity;
 import android.view.View;
 import android.widget.ImageView;
 
@@ -10,6 +9,8 @@ import com.asksira.bsimagepicker.BSImagePicker;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 public class MainActivity extends AppCompatActivity implements BSImagePicker.OnSingleImageSelectedListener,
         BSImagePicker.OnMultiImageSelectedListener{
@@ -32,6 +33,7 @@ public class MainActivity extends AppCompatActivity implements BSImagePicker.OnS
                 BSImagePicker pickerDialog = new BSImagePicker.Builder("com.asksira.imagepickersheetdemo.fileprovider")
                         .setCameraTitle("Take a photo")
                         .setGalleryTitle("Choose from gallery")
+                        .setOpenCameraOnly(true)
                         .build();
                 pickerDialog.show(getSupportFragmentManager(), "picker");
             }
