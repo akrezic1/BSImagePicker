@@ -118,6 +118,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     private String cameraTitle;
     private String galleryTitle;
     private boolean openCameraOnly;
+    private String photoPath;
 
     /**
      * Here we check if the caller Activity has registered callback and reference it.
@@ -402,6 +403,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             cameraTitle = getArguments().getString("cameraTitle");
             galleryTitle = getArguments().getString("galleryTitle");
             openCameraOnly = getArguments().getBoolean("openCameraOnly");
+            photoPath = getArguments().getString("photoPath");
         } catch (Exception e) {
             if (BuildConfig.DEBUG) {
                 e.printStackTrace();
@@ -521,7 +523,13 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         }
         Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePhotoIntent.resolveActivity(getContext().getPackageManager()) != null) {
-            File photoFile = createImageFile();
+            File photoFile;
+            if (photoPath != null && !photoPath.isEmpty()) {
+                photoFile = new File(photoPath);
+                currentPhotoUri = Uri.fromFile(photoFile);
+            } else {
+                photoFile = createImageFile();
+            }
             if (photoFile != null) {
                 Uri photoURI = FileProvider.getUriForFile(getContext(),
                                                           providerAuthority,
@@ -625,6 +633,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         private String cameraTitle;
         private String galleryTitle;
         private boolean openCameraOnly;
+        private String photoPath = "";
 
         public Builder(String providerAuthority) {
             this(providerAuthority, null);
@@ -751,6 +760,17 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             return this;
         }
 
+        /**
+         * File path that we already created when working with images in repsly
+         *
+         * @param photoPath path to a file
+         * @return builder
+         */
+        public Builder setPhotoPath(@NonNull String photoPath) {
+            this.photoPath = photoPath;
+            return this;
+        }
+
         public BSImagePicker build() {
             Bundle args = new Bundle();
             args.putString("providerAuthority", providerAuthority);
@@ -774,6 +794,7 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             args.putString("galleryTitle", galleryTitle);
             args.putString("folderName", folderName);
             args.putBoolean("openCameraOnly", openCameraOnly);
+            args.putString("photoPath", photoPath);
 
             BSImagePicker fragment = new BSImagePicker();
             fragment.setArguments(args);

@@ -2,12 +2,16 @@ package com.asksira.imagepickersheetdemo;
 
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.view.View;
 import android.widget.ImageView;
 
 import com.asksira.bsimagepicker.BSImagePicker;
 import com.squareup.picasso.Picasso;
 
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -16,7 +20,7 @@ public class MainActivity extends AppCompatActivity implements BSImagePicker.OnS
         BSImagePicker.OnMultiImageSelectedListener{
 
     private ImageView ivImage1, ivImage2, ivImage3, ivImage4, ivImage5, ivImage6;
-
+    String imagePath;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -27,6 +31,13 @@ public class MainActivity extends AppCompatActivity implements BSImagePicker.OnS
         ivImage4 = findViewById(R.id.iv_image4);
         ivImage5 = findViewById(R.id.iv_image5);
         ivImage6 = findViewById(R.id.iv_image6);
+
+        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
+        String imageFileName = "Repsly1" + "/JPEG_" + timeStamp + "_";
+        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        File image = new File(storageDir, imageFileName + ".jpg");
+        imagePath = image.getAbsolutePath();
+
         findViewById(R.id.tv_single_selection).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -34,6 +45,7 @@ public class MainActivity extends AppCompatActivity implements BSImagePicker.OnS
                         .setCameraTitle("Take a photo")
                         .setGalleryTitle("Choose from gallery")
                         .setOpenCameraOnly(true)
+                        .setPhotoPath(imagePath)
                         .build();
                 pickerDialog.show(getSupportFragmentManager(), "picker");
             }
