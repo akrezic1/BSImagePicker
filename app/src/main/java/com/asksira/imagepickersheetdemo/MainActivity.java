@@ -34,7 +34,7 @@ public class MainActivity extends AppCompatActivity implements BSImagePicker.OnS
         findViewById(R.id.tv_single_selection).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                BSImagePicker pickerDialog = new BSImagePicker.Builder("com.asksira.imagepickersheetdemo.fileprovider")
+                BSImagePicker pickerDialog = new BSImagePicker.Builder("com.asksira.imagepickersheetdemo.fileprovider", "Repsly")
                         .setCameraTitle("Take a photo")
                         .setGalleryTitle("Choose from gallery")
                         .setOpenCameraOnly(true)
