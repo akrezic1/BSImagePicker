@@ -545,11 +545,13 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
 
     private File createImageFile() {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-        String imageFileName = "JPEG_" + timeStamp + "_";
+        String imageFileName;
         File storageDir;
         if (getContext() != null) {
+            imageFileName = "JPEG_" + timeStamp + "_";
             storageDir = new File(getContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES), "/" + folderName);
         } else {
+            imageFileName = folderName + "/JPEG_" + timeStamp + "_";
             storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
         }
 
