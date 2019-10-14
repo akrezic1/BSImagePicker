@@ -20,7 +20,6 @@ public class MainActivity extends AppCompatActivity implements BSImagePicker.OnS
         BSImagePicker.OnMultiImageSelectedListener{
 
     private ImageView ivImage1, ivImage2, ivImage3, ivImage4, ivImage5, ivImage6;
-    String imagePath;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -32,12 +31,6 @@ public class MainActivity extends AppCompatActivity implements BSImagePicker.OnS
         ivImage5 = findViewById(R.id.iv_image5);
         ivImage6 = findViewById(R.id.iv_image6);
 
-        String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-        String imageFileName = "Repsly1" + "/JPEG_" + timeStamp + "_";
-        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        File image = new File(storageDir, imageFileName + ".jpg");
-        imagePath = image.getAbsolutePath();
-
         findViewById(R.id.tv_single_selection).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -45,7 +38,6 @@ public class MainActivity extends AppCompatActivity implements BSImagePicker.OnS
                         .setCameraTitle("Take a photo")
                         .setGalleryTitle("Choose from gallery")
                         .setOpenCameraOnly(true)
-                        .setPhotoPath(imagePath)
                         .build();
                 pickerDialog.show(getSupportFragmentManager(), "picker");
             }

@@ -24,6 +24,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -118,7 +119,6 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     private String cameraTitle;
     private String galleryTitle;
     private boolean openCameraOnly;
-    private String photoPath;
 
     /**
      * Here we check if the caller Activity has registered callback and reference it.
@@ -403,7 +403,6 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             cameraTitle = getArguments().getString("cameraTitle");
             galleryTitle = getArguments().getString("galleryTitle");
             openCameraOnly = getArguments().getBoolean("openCameraOnly");
-            photoPath = getArguments().getString("photoPath");
         } catch (Exception e) {
             if (BuildConfig.DEBUG) {
                 e.printStackTrace();
@@ -524,12 +523,8 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePhotoIntent.resolveActivity(getContext().getPackageManager()) != null) {
             File photoFile;
-            if (photoPath != null && !photoPath.isEmpty()) {
-                photoFile = new File(photoPath);
-                currentPhotoUri = Uri.fromFile(photoFile);
-            } else {
-                photoFile = createImageFile();
-            }
+            photoFile = createImageFile();
+
             if (photoFile != null) {
                 Uri photoURI = FileProvider.getUriForFile(getContext(),
                                                           providerAuthority,
@@ -551,13 +546,33 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
     private File createImageFile() {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
         String imageFileName = folderName + "/JPEG_" + timeStamp + "_";
-        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        File image = new File(storageDir, imageFileName + ".jpg");
+        File storageDir;
+        if(getContext() != null) {
+            storageDir = new File(getContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES), "/Repsly");
+        } else{
+            storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        }
+
+        if (!storageDir.exists()) {
+            storageDir.mkdirs();
+        }
+
+        File image;
+        try {
+            image = File.createTempFile(
+                    imageFileName,  /* prefix */
+                    ".jpg",   /* suffix */
+                    storageDir      /* directory */
+            );
+        } catch (IOException e) {
+            image = new File(storageDir, imageFileName + ".jpg");
+        }
 
         // Save a file: path for use with ACTION_VIEW intents
         currentPhotoUri = Uri.fromFile(image);
         return image;
     }
+
 
     private void notifyGallery() {
         if (getContext() == null) {
@@ -633,7 +648,6 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         private String cameraTitle;
         private String galleryTitle;
         private boolean openCameraOnly;
-        private String photoPath = "";
 
         public Builder(String providerAuthority) {
             this(providerAuthority, null);
@@ -760,16 +774,6 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             return this;
         }
 
-        /**
-         * File path that we already created when working with images in repsly
-         *
-         * @param photoPath path to a file
-         * @return builder
-         */
-        public Builder setPhotoPath(@NonNull String photoPath) {
-            this.photoPath = photoPath;
-            return this;
-        }
 
         public BSImagePicker build() {
             Bundle args = new Bundle();
@@ -794,7 +798,6 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
             args.putString("galleryTitle", galleryTitle);
             args.putString("folderName", folderName);
             args.putBoolean("openCameraOnly", openCameraOnly);
-            args.putString("photoPath", photoPath);
 
             BSImagePicker fragment = new BSImagePicker();
             fragment.setArguments(args);
