@@ -24,6 +24,7 @@ import com.google.android.material.bottomsheet.BottomSheetDialog;
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -521,7 +522,9 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
         }
         Intent takePhotoIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (takePhotoIntent.resolveActivity(getContext().getPackageManager()) != null) {
-            File photoFile = createImageFile();
+            File photoFile;
+            photoFile = createImageFile();
+
             if (photoFile != null) {
                 Uri photoURI = FileProvider.getUriForFile(getContext(),
                                                           providerAuthority,
@@ -542,9 +545,30 @@ public class BSImagePicker extends BottomSheetDialogFragment implements LoaderMa
 
     private File createImageFile() {
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-        String imageFileName = folderName + "/JPEG_" + timeStamp + "_";
-        File storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
-        File image = new File(storageDir, imageFileName + ".jpg");
+        String imageFileName;
+        File storageDir;
+        if (getContext() != null) {
+            imageFileName = "JPEG_" + timeStamp + "_";
+            storageDir = new File(getContext().getExternalFilesDir(Environment.DIRECTORY_PICTURES), "/" + folderName);
+        } else {
+            imageFileName = folderName + "/JPEG_" + timeStamp + "_";
+            storageDir = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES);
+        }
+
+        if (!storageDir.exists()) {
+            storageDir.mkdirs();
+        }
+
+        File image;
+        try {
+            image = File.createTempFile(
+                    imageFileName,  /* prefix */
+                    ".jpg",   /* suffix */
+                    storageDir      /* directory */
+            );
+        } catch (IOException e) {
+            image = new File(storageDir, imageFileName + ".jpg");
+        }
 
         // Save a file: path for use with ACTION_VIEW intents
         currentPhotoUri = Uri.fromFile(image);
